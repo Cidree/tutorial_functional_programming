@@ -121,23 +121,68 @@ iris_tbl |>
 ## 5.1. Simple example ----------------------------
 
 ## Sum over the lists
-fruits <- list("peach", "pear", "cherry", "strawberry", "blackberry")
-colors <- list("orange", "green", "red", "red", "black")
+fruits <- c("peach", "pear", "cherry", "strawberry", "blackberry")
+colors <- c("orange", "green", "red", "red", "black")
+rounded <- c("rounded", "not rounded", "rounded", "not rounded", "rounded")
 
-## Iterate to sum
+## Iterate to create the sentence
+map2_chr(
+    .x = fruits,
+    .y = colors,
+    \(fruit, color) str_glue("The color of {fruit} is {color}")
+)
+
+## Iterate over 3 vectors
+pmap(
+    .l = list(
+        fruits,
+        colors,
+        rounded
+    ),
+    \(fruit, color, rounded) str_glue("The color of {fruit} is {color} and is {rounded}")
+)
 
 
 ## 5.2. A bigger example --------------------------
 
-## Plot 
-
+## Create a grid of parameters
+params_tbl <- expand_grid(
+    ntree = c(100, 200, 500, 1000),
+    mtry  = 1:4
+)
 
 ## Create a Random Forest model for each parameter
-
+iris_rf_list <- map2(
+    .x = params_tbl$ntree,
+    .y = params_tbl$mtry,
+    \(ntree, mtry) ranger(
+        formula   = Sepal.Length ~ .,
+        data      = iris_tbl,
+        num.trees = ntree,
+        mtry      = mtry
+    )
+)
 
 ## Extract r.squared
+map_dbl(
+    iris_rf_list,
+    \(rf_model) rf_model$r.squared
+)
 
 
 ## Add as a new column
+params_tbl |> 
+    mutate(
+        rsq = map_dbl(
+            iris_rf_list,
+            \(rf_model) rf_model$r.squared
+        )
+    ) |> 
+    arrange(desc(rsq))
+
+
+
+
+
 
 
